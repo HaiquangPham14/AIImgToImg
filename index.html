@@ -506,14 +506,12 @@
             const statusQueuing = document.getElementById('status-queuing');
             const statusProcessing = document.getElementById('status-processing');
             
-            // THAY YOUR_API_KEY bằng API key của bạn
-            const API_KEY = 'oKfvuQlhx8XzOCsVZB7l2n643eqsFyowvM1eh0LUD62HAkITqP7mbYfHVkN3ECxR';
+            const API_KEY = 'mFUpsZYug5JHfqh2AoDyNe0P2k3vmdBql90ixIGERLdnLX5COX7QVrwxeC6u8tvo';
             const API_URL = 'https://www.ailabapi.com/api/image/effects/ai-anime-generator';
             
-            // Endpoint để truy vấn kết quả (theo document)
             const RESULT_URL = 'https://www.ailabapi.com/api/common/query-async-task-result';
             
-            // Xử lý kéo thả file
+
             uploadArea.addEventListener('click', () => fileInput.click());
             
             uploadArea.addEventListener('dragover', (e) => {
@@ -542,7 +540,6 @@
                     const file = fileInput.files[0];
                     fileName.textContent = `Đã chọn: ${file.name}`;
                     
-                    // Hiển thị xem trước ảnh gốc
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         originalImage.src = e.target.result;
@@ -555,7 +552,6 @@
                 const file = fileInput.files[0];
                 const index = indexInput.value;
                 
-                // Ẩn các thông báo trước đó
                 errorDiv.style.display = 'none';
                 successDiv.style.display = 'none';
                 resultContainer.style.display = 'none';
@@ -584,7 +580,6 @@
                 formData.append('task_type', 'async');
                 
                 try {
-                    // Gửi yêu cầu chuyển đổi
                     const response = await fetch(API_URL, {
                         method: 'POST',
                         headers: {
@@ -595,13 +590,11 @@
                     
                     const data = await response.json();
                     
-                    // Kiểm tra lỗi từ API
                     if (data.error_code && data.error_code !== 0) {
                         showError(`Lỗi từ API: ${data.error_detail?.message || data.error_msg || 'Không xác định'}`);
                         return;
                     }
                     
-                    // Lấy task_id từ response
                     const taskId = data.task_id;
                     
                     if (!taskId) {
@@ -609,7 +602,6 @@
                         return;
                     }
                     
-                    // Bắt đầu theo dõi kết quả
                     pollResult(taskId);
                     
                 } catch (err) {
@@ -618,11 +610,10 @@
                 }
             });
             
-            // Hàm theo dõi kết quả chuyển đổi
             async function pollResult(taskId) {
                 console.log(`Bắt đầu theo dõi task: ${taskId}`);
                 let attempts = 0;
-                const maxAttempts = 40; // Tối đa 40 lần thử (80 giây)
+                const maxAttempts = 40; 
 
                 const pollInterval = setInterval(async () => {
                     attempts++;
@@ -642,8 +633,7 @@
                                 'ailabapi-api-key': API_KEY
                             }
                         });
-                        
-                        // Kiểm tra response trước khi parse JSON
+
                         if (!response.ok) {
                             if (response.status === 404) {
                                 throw new Error(`Endpoint không tồn tại (404). Vui lòng kiểm tra lại URL API.`);
@@ -662,7 +652,7 @@
                         
                         const status = result.data?.status;
                         
-                        // Cập nhật trạng thái
+
                         if (status === 'QUEUING') {
                             statusQueuing.style.display = 'block';
                             statusProcessing.style.display = 'none';
@@ -674,24 +664,21 @@
                             processingText.style.display = 'block';
                         }
                         
-                        // Xử lý theo trạng thái
                         if (status === 'PROCESS_SUCCESS' && result.data?.result_url) {
                             clearInterval(pollInterval);
-                            // Hiển thị ảnh anime trực tiếp từ URL
                             showResult(result.data.result_url);
                         } 
                         else if (status === 'FAILURE') {
                             clearInterval(pollInterval);
                             showError('Quá trình chuyển đổi thất bại! Vui lòng thử lại với ảnh khác.');
                         }
-                        // Các trạng thái QUEUING/RUNNING tiếp tục chờ
                         
                     } catch (err) {
                         console.error('Polling error:', err);
                         clearInterval(pollInterval);
                         showError(`Lỗi khi kết nối lấy kết quả: ${err.message}`);
                     }
-                }, 5000); // Kiểm tra mỗi 5 giây (theo khuyến nghị)
+                }, 5000); 
             }
             
             // Hiển thị kết quả
@@ -702,7 +689,6 @@
                 statusProcessing.style.display = 'none';
                 submitBtn.disabled = false;
                 
-                // Hiển thị ảnh anime trực tiếp từ URL
                 animeImage.src = imageUrl;
                 downloadLink.href = imageUrl;
                 downloadLink.download = 'anime-image.jpg';
