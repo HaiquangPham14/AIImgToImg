@@ -4,231 +4,732 @@
 <head>
     <meta charset="UTF-8">
     <title>Chuyển Ảnh Thành Anime - AILabAPI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        :root {
+            --primary: #2d2d64;
+            --secondary: #4a4a8c;
+            --accent: #ff7e5f;
+            --light: #f8f9ff;
+            --dark: #1a1a3c;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            background: #f8f8ff;
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 16px #0001;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
-
+        
+        .container {
+            background: white;
+            width: 100%;
+            max-width: 850px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+        }
+        
         h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .card {
+            background: var(--light);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e0e5ff;
+        }
+        
+        .card-title {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title i {
+            font-size: 1.6rem;
+        }
+        
+        .upload-area {
+            border: 3px dashed var(--primary);
+            border-radius: 12px;
+            padding: 40px 20px;
             text-align: center;
-            color: #2d2d64;
-        }
-
-        form {
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        input[type="file"],
-        select {
-            margin-bottom: 12px;
-        }
-
-        button {
-            padding: 10px 24px;
-            background: #2d2d64;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
+            background: #f0f3ff;
+            transition: all 0.3s ease;
             cursor: pointer;
+            margin-bottom: 20px;
         }
-
+        
+        .upload-area:hover {
+            background: #e8ebff;
+            transform: translateY(-3px);
+        }
+        
+        .upload-area.active {
+            border-color: var(--accent);
+            background: #fff8f6;
+        }
+        
+        .upload-icon {
+            font-size: 60px;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            font-size: 1.2rem;
+            color: #555;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .upload-hint {
+            color: #777;
+            font-size: 0.95rem;
+        }
+        
+        #file-name {
+            margin-top: 15px;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+        
+        .style-selector {
+            margin: 25px 0;
+        }
+        
+        .style-selector label {
+            display: block;
+            margin-bottom: 12px;
+            color: #444;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        select {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            font-size: 1rem;
+            color: #333;
+            transition: all 0.3s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232d2d64' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.2em;
+        }
+        
+        select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(45, 45, 100, 0.15);
+        }
+        
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(45, 45, 100, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(45, 45, 100, 0.4);
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+        }
+        
         button:disabled {
             background: #aaa;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
         }
-
-        .result {
-            text-align: center;
+        
+        .result-container {
+            display: none;
             margin-top: 30px;
+            animation: fadeIn 0.5s ease;
         }
-
-        .error {
-            color: red;
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result-title {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 1.6rem;
             text-align: center;
-            margin-top: 20px;
+            position: relative;
+            padding-bottom: 15px;
         }
-
-        img {
-            max-width: 100%;
-            margin-top: 16px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px #0002;
+        
+        .result-title::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), #feb47b);
+            border-radius: 2px;
         }
-
+        
+        .image-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 25px;
+            margin: 30px 0;
+        }
+        
+        .image-box {
+            flex: 1;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .image-box h3 {
+            background: var(--primary);
+            color: white;
+            margin: 0;
+            padding: 15px;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        
+        .image-box img {
+            width: 100%;
+            display: block;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .image-box img:hover {
+            transform: scale(1.03);
+        }
+        
+        .download-btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            margin-top: 25px;
+            padding: 15px;
+            background: linear-gradient(90deg, var(--accent), #feb47b);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(255, 126, 95, 0.3);
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 126, 95, 0.4);
+        }
+        
         .loader {
-            margin: 28px auto;
-            border: 6px solid #f3f3f3;
+            margin: 40px auto;
+            border: 6px solid rgba(45, 45, 100, 0.1);
             border-radius: 50%;
-            border-top: 6px solid #2d2d64;
-            width: 48px;
-            height: 48px;
-            animation: spin 1s linear infinite;
+            border-top: 6px solid var(--primary);
+            width: 60px;
+            height: 60px;
+            animation: spin 1.5s linear infinite;
+            display: none;
         }
-
+        
+        .processing-text {
+            text-align: center;
+            color: var(--primary);
+            font-size: 1.2rem;
+            margin-top: 20px;
+            display: none;
+        }
+        
         @keyframes spin {
             100% {
                 transform: rotate(360deg);
+            }
+        }
+        
+        .status-info {
+            text-align: center;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .status-queuing {
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+        
+        .status-processing {
+            background: #fff8e1;
+            color: #ff8f00;
+        }
+        
+        .status-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            text-align: center;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 10px;
+            display: none;
+            font-weight: 500;
+        }
+        
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            text-align: center;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 10px;
+            display: none;
+            font-weight: 500;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.95rem;
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .tip-box {
+            background: #fff8e1;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+        
+        @media (max-width: 768px) {
+            .image-container {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
             }
         }
     </style>
 </head>
 
 <body>
-    <h1>Chuyển Ảnh Thành Anime với AI</h1>
-    <form id="upload-form">
-        <input type="file" name="image" id="image-input"
-            accept="image/jpeg, image/png, image/jpg, image/bmp, image/webp" required><br>
-        <select id="index-input" name="index">
-            <option value="0">Vintage Comic</option>
-            <option value="1">3D Fairy Tale</option>
-            <option value="2">Two-dimensional (2D)</option>
-            <option value="3">Refreshing and Elegant</option>
-            <option value="4">Future Technology</option>
-            <option value="5">Traditional Chinese Painting Style</option>
-            <option value="6">General in a Hundred Battles</option>
-            <option value="7">Colorful Cartoon</option>
-            <option value="8">Graceful Chinese Style</option>
-        </select><br>
-        <input type="hidden" name="task_type" value="async">
-        <br>
-        <button type="submit" id="submit-btn">Chuyển Đổi</button>
-    </form>
-    <div id="loader" class="loader" style="display:none"></div>
-    <div class="error" id="error"></div>
-    <div class="result" id="result"></div>
+    <div class="container">
+        <header>
+            <h1>Chuyển Ảnh Thành Anime</h1>
+            <div class="subtitle">Sử dụng công nghệ AI tiên tiến để biến ảnh thường thành tranh anime đẹp mắt</div>
+        </header>
+        
+        <div class="content">
+            <div class="tip-box">
+                <strong>Lưu ý quan trọng:</strong> Kết quả chuyển đổi là tạm thời và chỉ có hiệu lực trong 24 giờ. 
+                Vui lòng tải ảnh về máy của bạn nếu muốn lưu trữ lâu dài.
+            </div>
+            
+            <div class="card">
+                <div class="card-title">
+                    <i>📤</i>
+                    <span>Tải lên ảnh của bạn</span>
+                </div>
+                
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Kéo thả ảnh vào đây hoặc nhấn để chọn</div>
+                    <div class="upload-hint">Hỗ trợ định dạng: JPG, PNG, BMP, WEBP (tối đa 10MB)</div>
+                    <div id="file-name"></div>
+                </div>
+                <input type="file" name="image" id="image-input" 
+                    accept="image/jpeg, image/png, image/jpg, image/bmp, image/webp" hidden>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">
+                    <i>🎨</i>
+                    <span>Chọn phong cách anime</span>
+                </div>
+                
+                <div class="style-selector">
+                    <select id="index-input" name="index">
+                        <option value="0">Vintage Comic</option>
+                        <option value="1">3D Fairy Tale</option>
+                        <option value="2">Two-dimensional (2D)</option>
+                        <option value="3">Refreshing and Elegant</option>
+                        <option value="4">Future Technology</option>
+                        <option value="5">Traditional Chinese Painting Style</option>
+                        <option value="6">General in a Hundred Battles</option>
+                        <option value="7">Colorful Cartoon</option>
+                        <option value="8">Graceful Chinese Style</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button id="submit-btn">
+                <span>Bắt Đầu Chuyển Đổi</span>
+            </button>
+            
+            <div class="loader" id="loader"></div>
+            <div class="processing-text" id="processing-text">Đang xử lý ảnh bằng AI, vui lòng chờ...</div>
+            
+            <div class="status-info" id="status-queuing">
+                <i>⏳</i> Ảnh của bạn đang trong hàng đợi, vui lòng đợi...
+            </div>
+            
+            <div class="status-info" id="status-processing">
+                <i>⚙️</i> Đang chuyển đổi ảnh thành anime...
+            </div>
+            
+            <div class="error" id="error"></div>
+            <div class="success-message" id="success"></div>
+            
+            <div class="result-container" id="result-container">
+                <div class="result-title">Kết Quả Chuyển Đổi</div>
+                
+                <div class="image-container">
+                    <div class="image-box">
+                        <h3>Ảnh Gốc</h3>
+                        <img id="original-image" src="" alt="Original">
+                    </div>
+                    <div class="image-box">
+                        <h3>Ảnh Anime</h3>
+                        <img id="anime-image" src="" alt="Anime">
+                    </div>
+                </div>
+                
+                <a href="#" id="download-link" class="download-btn">
+                    <span>⬇️ Tải Ảnh Anime Về Máy</span>
+                </a>
+                
+                <div class="tip-box">
+                    <strong>Lưu ý:</strong> Link ảnh anime chỉ có hiệu lực trong 24 giờ. 
+                    Hãy tải ảnh về máy nếu bạn muốn lưu trữ lâu dài.
+                </div>
+            </div>
+            
+            <div class="footer">
+                Công nghệ AI cung cấp bởi AILabAPI - Ứng dụng có thể mất 15-60 giây để xử lý
+            </div>
+        </div>
+    </div>
+
     <script>
-        const form = document.getElementById('upload-form');
-        const resultDiv = document.getElementById('result');
-        const errorDiv = document.getElementById('error');
-        const loader = document.getElementById('loader');
-        const submitBtn = document.getElementById('submit-btn');
-
-        // THAY Your Api Key bằng API key của bạn!
-        const API_KEY = 'ByrOelDQLCnUuGjsaEwhFkAQENKlsqv0B0fWg1WSdZUn5Z3S8J4z2Gik9bjm5xoH';
-        const API_URL = 'https://www.ailabapi.com/api/image/effects/ai-anime-generator';
-
-        form.addEventListener('submit', async function (e) {
-            e.preventDefault();
-            resultDiv.innerHTML = '';
-            errorDiv.textContent = '';
-            loader.style.display = 'block';
-            submitBtn.disabled = true;
-
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('upload-area');
             const fileInput = document.getElementById('image-input');
+            const fileName = document.getElementById('file-name');
+            const submitBtn = document.getElementById('submit-btn');
+            const resultContainer = document.getElementById('result-container');
+            const originalImage = document.getElementById('original-image');
+            const animeImage = document.getElementById('anime-image');
+            const downloadLink = document.getElementById('download-link');
+            const loader = document.getElementById('loader');
+            const processingText = document.getElementById('processing-text');
+            const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
             const indexInput = document.getElementById('index-input');
-            const file = fileInput.files[0];
-            const index = indexInput.value;
-
-            if (!file) {
-                errorDiv.textContent = 'Vui lòng chọn một ảnh!';
-                loader.style.display = 'none';
-                submitBtn.disabled = false;
-                return;
-            }
-
-            if (file.size > 10 * 1024 * 1024) {
-                errorDiv.textContent = 'File ảnh phải nhỏ hơn 10MB!';
-                loader.style.display = 'none';
-                submitBtn.disabled = false;
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('index', index);
-            formData.append('task_type', 'async');
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'ailabapi-api-key': API_KEY
-                    },
-                    body: formData
-                });
-
-                const data = await response.json();
-                console.log('Upload response:', data);
-                loader.style.display = 'none';
-                submitBtn.disabled = false;
-
-                // Lấy task_id từ response (dù code là 0 hay error_code là 0)
-                const taskId = data.task_id || (data.data && data.data.task_id);
-                if (taskId) {
-                    pollResult(taskId);
-                } else {
-                    errorDiv.textContent = (data.message || data.error_detail?.message || 'Chuyển đổi thất bại!') + (data.error_code ? ` (Mã lỗi: ${data.error_code})` : '');
-                }
-            } catch (err) {
-                loader.style.display = 'none';
-                submitBtn.disabled = false;
-                errorDiv.textContent = 'Có lỗi xảy ra khi kết nối đến API!';
-            }
-        });
-
-        // Hàm poll lấy kết quả từ task_id
-        async function pollResult(taskId) {
-            loader.style.display = 'block';
-            errorDiv.textContent = '';
-            resultDiv.innerHTML = '';
+            const statusQueuing = document.getElementById('status-queuing');
+            const statusProcessing = document.getElementById('status-processing');
+            
+            // THAY YOUR_API_KEY bằng API key của bạn
+            const API_KEY = 'oKfvuQlhx8XzOCsVZB7l2n643eqsFyowvM1eh0LUD62HAkITqP7mbYfHVkN3ECxR';
+            const API_URL = 'https://www.ailabapi.com/api/image/effects/ai-anime-generator';
+            
+            // Endpoint để truy vấn kết quả (theo document)
             const RESULT_URL = 'https://www.ailabapi.com/api/common/query-async-task-result';
-            const POLL_INTERVAL = 2000; // ms
-            let tries = 0, maxTries = 30;
-
-            while (tries < maxTries) {
-                try {
-                    const resp = await fetch(RESULT_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'ailabapi-api-key': API_KEY
-                        },
-                        body: JSON.stringify({ task_id: taskId })
-                    });
-                    const result = await resp.json();
-                    console.log('Poll response:', result);
-
-                    if (result.data && result.data.status === 'SUCCESS' && result.data.result && result.data.result.image) {
-                        loader.style.display = 'none';
-                        resultDiv.innerHTML = `
-              <h2>Kết quả Anime:</h2>
-              <img src="${result.data.result.image}" alt="Ảnh anime"><br>
-              <a href="${result.data.result.image}" target="_blank">Tải ảnh anime</a>
-            `;
-                        return;
+            
+            // Xử lý kéo thả file
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('active');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('active');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('active');
+                
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileSelect();
+                }
+            });
+            
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            function handleFileSelect() {
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    fileName.textContent = `Đã chọn: ${file.name}`;
+                    
+                    // Hiển thị xem trước ảnh gốc
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        originalImage.src = e.target.result;
                     }
-
-                    // Nếu task còn đang xử lý
-                    if (result.data && (result.data.status === 'QUEUING' || result.data.status === 'RUNNING')) {
-                        await new Promise(r => setTimeout(r, POLL_INTERVAL));
-                    } else if (result.data && result.data.status === 'FAILURE') {
-                        errorDiv.textContent = 'Chuyển đổi thất bại!';
-                        loader.style.display = 'none';
-                        return;
-                    } else {
-                        // Nếu không rõ trạng thái, báo lỗi chi tiết
-                        errorDiv.textContent = (result.message || result.error_detail?.message || 'Có lỗi khi lấy kết quả!') +
-                            (result.error_code ? ` (Mã lỗi: ${result.error_code})` : '');
-                        loader.style.display = 'none';
-                        return;
-                    }
-                } catch (e) {
-                    errorDiv.textContent = 'Lỗi khi kết nối lấy kết quả!';
-                    loader.style.display = 'none';
+                    reader.readAsDataURL(file);
+                }
+            }
+            
+            submitBtn.addEventListener('click', async function() {
+                const file = fileInput.files[0];
+                const index = indexInput.value;
+                
+                // Ẩn các thông báo trước đó
+                errorDiv.style.display = 'none';
+                successDiv.style.display = 'none';
+                resultContainer.style.display = 'none';
+                statusQueuing.style.display = 'none';
+                statusProcessing.style.display = 'none';
+                
+                // Kiểm tra file
+                if (!file) {
+                    showError('Vui lòng chọn một ảnh trước khi chuyển đổi!');
                     return;
                 }
-                tries++;
+                
+                if (file.size > 10 * 1024 * 1024) {
+                    showError('File ảnh phải nhỏ hơn 10MB!');
+                    return;
+                }
+                
+                // Hiển thị trạng thái loading
+                loader.style.display = 'block';
+                processingText.style.display = 'block';
+                submitBtn.disabled = true;
+                
+                const formData = new FormData();
+                formData.append('image', file);
+                formData.append('index', index);
+                formData.append('task_type', 'async');
+                
+                try {
+                    // Gửi yêu cầu chuyển đổi
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'ailabapi-api-key': API_KEY
+                        },
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    // Kiểm tra lỗi từ API
+                    if (data.error_code && data.error_code !== 0) {
+                        showError(`Lỗi từ API: ${data.error_detail?.message || data.error_msg || 'Không xác định'}`);
+                        return;
+                    }
+                    
+                    // Lấy task_id từ response
+                    const taskId = data.task_id;
+                    
+                    if (!taskId) {
+                        showError('Không nhận được task_id từ server!');
+                        return;
+                    }
+                    
+                    // Bắt đầu theo dõi kết quả
+                    pollResult(taskId);
+                    
+                } catch (err) {
+                    console.error('Request failed:', err);
+                    showError('Có lỗi xảy ra khi kết nối đến API!');
+                }
+            });
+            
+            // Hàm theo dõi kết quả chuyển đổi
+            async function pollResult(taskId) {
+                console.log(`Bắt đầu theo dõi task: ${taskId}`);
+                let attempts = 0;
+                const maxAttempts = 40; // Tối đa 40 lần thử (80 giây)
+
+                const pollInterval = setInterval(async () => {
+                    attempts++;
+                    
+                    if (attempts > maxAttempts) {
+                        clearInterval(pollInterval);
+                        showError('Quá thời gian chờ kết quả! Vui lòng thử lại.');
+                        return;
+                    }
+                    
+                    try {
+                        // Sử dụng phương thức GET với tham số task_id trong URL
+                        const response = await fetch(`${RESULT_URL}?task_id=${taskId}`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'ailabapi-api-key': API_KEY
+                            }
+                        });
+                        
+                        // Kiểm tra response trước khi parse JSON
+                        if (!response.ok) {
+                            if (response.status === 404) {
+                                throw new Error(`Endpoint không tồn tại (404). Vui lòng kiểm tra lại URL API.`);
+                            }
+                            throw new Error(`Lỗi HTTP! Mã trạng thái: ${response.status}`);
+                        }
+                        
+                        const result = await response.json();
+                        
+                        // Kiểm tra lỗi
+                        if (result.error_code && result.error_code !== 0) {
+                            clearInterval(pollInterval);
+                            showError(`Lỗi khi lấy kết quả: ${result.error_detail?.message || result.error_msg || 'Không xác định'}`);
+                            return;
+                        }
+                        
+                        const status = result.data?.status;
+                        
+                        // Cập nhật trạng thái
+                        if (status === 'QUEUING') {
+                            statusQueuing.style.display = 'block';
+                            statusProcessing.style.display = 'none';
+                            processingText.style.display = 'block';
+                        } 
+                        else if (status === 'RUNNING') {
+                            statusQueuing.style.display = 'none';
+                            statusProcessing.style.display = 'block';
+                            processingText.style.display = 'block';
+                        }
+                        
+                        // Xử lý theo trạng thái
+                        if (status === 'PROCESS_SUCCESS' && result.data?.result_url) {
+                            clearInterval(pollInterval);
+                            // Hiển thị ảnh anime trực tiếp từ URL
+                            showResult(result.data.result_url);
+                        } 
+                        else if (status === 'FAILURE') {
+                            clearInterval(pollInterval);
+                            showError('Quá trình chuyển đổi thất bại! Vui lòng thử lại với ảnh khác.');
+                        }
+                        // Các trạng thái QUEUING/RUNNING tiếp tục chờ
+                        
+                    } catch (err) {
+                        console.error('Polling error:', err);
+                        clearInterval(pollInterval);
+                        showError(`Lỗi khi kết nối lấy kết quả: ${err.message}`);
+                    }
+                }, 5000); // Kiểm tra mỗi 5 giây (theo khuyến nghị)
             }
-            errorDiv.textContent = 'Quá thời gian chờ kết quả!';
-            loader.style.display = 'none';
-        }
+            
+            // Hiển thị kết quả
+            function showResult(imageUrl) {
+                loader.style.display = 'none';
+                processingText.style.display = 'none';
+                statusQueuing.style.display = 'none';
+                statusProcessing.style.display = 'none';
+                submitBtn.disabled = false;
+                
+                // Hiển thị ảnh anime trực tiếp từ URL
+                animeImage.src = imageUrl;
+                downloadLink.href = imageUrl;
+                downloadLink.download = 'anime-image.jpg';
+                
+                resultContainer.style.display = 'block';
+                successDiv.textContent = '✅ Chuyển đổi thành công!';
+                successDiv.style.display = 'block';
+                
+                // Cuộn xuống kết quả
+                resultContainer.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            // Hiển thị lỗi
+            function showError(message) {
+                loader.style.display = 'none';
+                processingText.style.display = 'none';
+                statusQueuing.style.display = 'none';
+                statusProcessing.style.display = 'none';
+                submitBtn.disabled = false;
+                
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+                
+                // Cuộn đến thông báo lỗi
+                errorDiv.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
     </script>
 </body>
 
