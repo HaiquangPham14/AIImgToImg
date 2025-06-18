@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chuyển Ảnh Thành Anime - AILabAPI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8f8ff;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 16px #0001;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2d2d64;
+        }
+
+        form {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        input[type="file"],
+        select {
+            margin-bottom: 12px;
+        }
+
+        button {
+            padding: 10px 24px;
+            background: #2d2d64;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background: #aaa;
+        }
+
+        .result {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .error {
+            color: red;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        img {
+            max-width: 100%;
+            margin-top: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px #0002;
+        }
+
+        .loader {
+            margin: 28px auto;
+            border: 6px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 6px solid #2d2d64;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Chuyển Ảnh Thành Anime với AI</h1>
+    <form id="upload-form">
+        <input type="file" name="image" id="image-input"
+            accept="image/jpeg, image/png, image/jpg, image/bmp, image/webp" required><br>
+        <select id="index-input" name="index">
+            <option value="0">Vintage Comic</option>
+            <option value="1">3D Fairy Tale</option>
+            <option value="2">Two-dimensional (2D)</option>
+            <option value="3">Refreshing and Elegant</option>
+            <option value="4">Future Technology</option>
+            <option value="5">Traditional Chinese Painting Style</option>
+            <option value="6">General in a Hundred Battles</option>
+            <option value="7">Colorful Cartoon</option>
+            <option value="8">Graceful Chinese Style</option>
+        </select><br>
+        <input type="hidden" name="task_type" value="async">
+        <br>
+        <button type="submit" id="submit-btn">Chuyển Đổi</button>
+    </form>
+    <div id="loader" class="loader" style="display:none"></div>
+    <div class="error" id="error"></div>
+    <div class="result" id="result"></div>
+    <script>
+        const form = document.getElementById('upload-form');
+        const resultDiv = document.getElementById('result');
+        const errorDiv = document.getElementById('error');
+        const loader = document.getElementById('loader');
+        const submitBtn = document.getElementById('submit-btn');
+
+        // THAY Your Api Key bằng API key của bạn!
+        const API_KEY = 'ByrOelDQLCnUuGjsaEwhFkAQENKlsqv0B0fWg1WSdZUn5Z3S8J4z2Gik9bjm5xoH';
+        const API_URL = 'https://www.ailabapi.com/api/image/effects/ai-anime-generator';
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            resultDiv.innerHTML = '';
+            errorDiv.textContent = '';
+            loader.style.display = 'block';
+            submitBtn.disabled = true;
+
+            const fileInput = document.getElementById('image-input');
+            const indexInput = document.getElementById('index-input');
+            const file = fileInput.files[0];
+            const index = indexInput.value;
+
+            if (!file) {
+                errorDiv.textContent = 'Vui lòng chọn một ảnh!';
+                loader.style.display = 'none';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                errorDiv.textContent = 'File ảnh phải nhỏ hơn 10MB!';
+                loader.style.display = 'none';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('index', index);
+            formData.append('task_type', 'async');
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'ailabapi-api-key': API_KEY
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+                console.log('Upload response:', data);
+                loader.style.display = 'none';
+                submitBtn.disabled = false;
+
+                // Lấy task_id từ response (dù code là 0 hay error_code là 0)
+                const taskId = data.task_id || (data.data && data.data.task_id);
+                if (taskId) {
+                    pollResult(taskId);
+                } else {
+                    errorDiv.textContent = (data.message || data.error_detail?.message || 'Chuyển đổi thất bại!') + (data.error_code ? ` (Mã lỗi: ${data.error_code})` : '');
+                }
+            } catch (err) {
+                loader.style.display = 'none';
+                submitBtn.disabled = false;
+                errorDiv.textContent = 'Có lỗi xảy ra khi kết nối đến API!';
+            }
+        });
+
+        // Hàm poll lấy kết quả từ task_id
+        async function pollResult(taskId) {
+            loader.style.display = 'block';
+            errorDiv.textContent = '';
+            resultDiv.innerHTML = '';
+            const RESULT_URL = 'https://www.ailabapi.com/api/common/query-async-task-result';
+            const POLL_INTERVAL = 2000; // ms
+            let tries = 0, maxTries = 30;
+
+            while (tries < maxTries) {
+                try {
+                    const resp = await fetch(RESULT_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'ailabapi-api-key': API_KEY
+                        },
+                        body: JSON.stringify({ task_id: taskId })
+                    });
+                    const result = await resp.json();
+                    console.log('Poll response:', result);
+
+                    if (result.data && result.data.status === 'SUCCESS' && result.data.result && result.data.result.image) {
+                        loader.style.display = 'none';
+                        resultDiv.innerHTML = `
+              <h2>Kết quả Anime:</h2>
+              <img src="${result.data.result.image}" alt="Ảnh anime"><br>
+              <a href="${result.data.result.image}" target="_blank">Tải ảnh anime</a>
+            `;
+                        return;
+                    }
+
+                    // Nếu task còn đang xử lý
+                    if (result.data && (result.data.status === 'QUEUING' || result.data.status === 'RUNNING')) {
+                        await new Promise(r => setTimeout(r, POLL_INTERVAL));
+                    } else if (result.data && result.data.status === 'FAILURE') {
+                        errorDiv.textContent = 'Chuyển đổi thất bại!';
+                        loader.style.display = 'none';
+                        return;
+                    } else {
+                        // Nếu không rõ trạng thái, báo lỗi chi tiết
+                        errorDiv.textContent = (result.message || result.error_detail?.message || 'Có lỗi khi lấy kết quả!') +
+                            (result.error_code ? ` (Mã lỗi: ${result.error_code})` : '');
+                        loader.style.display = 'none';
+                        return;
+                    }
+                } catch (e) {
+                    errorDiv.textContent = 'Lỗi khi kết nối lấy kết quả!';
+                    loader.style.display = 'none';
+                    return;
+                }
+                tries++;
+            }
+            errorDiv.textContent = 'Quá thời gian chờ kết quả!';
+            loader.style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>
