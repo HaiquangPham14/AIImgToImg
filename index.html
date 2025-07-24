@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <title>Chuyển Ảnh Thành Anime - AILabAPI</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Firebase SDK chỉ dùng cho Storage -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <style>
         :root {
             --primary: #2d2d64;
@@ -13,14 +16,14 @@
             --light: #f8f9ff;
             --dark: #1a1a3c;
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         body {
             background: linear-gradient(135deg, #6e8efb, #a777e3);
             min-height: 100vh;
@@ -29,16 +32,16 @@
             align-items: center;
             padding: 20px;
         }
-        
+
         .container {
             background: white;
             width: 100%;
-            max-width: 850px;
+            max-width: 900px;
             border-radius: 20px;
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
             overflow: hidden;
         }
-        
+
         header {
             background: linear-gradient(90deg, var(--primary), var(--secondary));
             color: white;
@@ -46,24 +49,24 @@
             text-align: center;
             position: relative;
         }
-        
+
         h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
-        
+
         .subtitle {
             font-size: 1.1rem;
             opacity: 0.9;
             max-width: 600px;
             margin: 0 auto;
         }
-        
+
         .content {
             padding: 30px;
         }
-        
+
         .card {
             background: var(--light);
             border-radius: 15px;
@@ -71,8 +74,9 @@
             margin-bottom: 25px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
             border: 1px solid #e0e5ff;
+            transition: all 0.3s ease;
         }
-        
+
         .card-title {
             color: var(--primary);
             margin-bottom: 20px;
@@ -81,11 +85,11 @@
             align-items: center;
             gap: 10px;
         }
-        
+
         .card-title i {
             font-size: 1.6rem;
         }
-        
+
         .upload-area {
             border: 3px dashed var(--primary);
             border-radius: 12px;
@@ -96,46 +100,46 @@
             cursor: pointer;
             margin-bottom: 20px;
         }
-        
+
         .upload-area:hover {
             background: #e8ebff;
             transform: translateY(-3px);
         }
-        
+
         .upload-area.active {
             border-color: var(--accent);
             background: #fff8f6;
         }
-        
+
         .upload-icon {
             font-size: 60px;
             color: var(--primary);
             margin-bottom: 15px;
         }
-        
+
         .upload-text {
             font-size: 1.2rem;
             color: #555;
             margin-bottom: 15px;
             font-weight: 500;
         }
-        
+
         .upload-hint {
             color: #777;
             font-size: 0.95rem;
         }
-        
+
         #file-name {
             margin-top: 15px;
             font-weight: bold;
             color: var(--primary);
             font-size: 1.1rem;
         }
-        
+
         .style-selector {
             margin: 25px 0;
         }
-        
+
         .style-selector label {
             display: block;
             margin-bottom: 12px;
@@ -143,7 +147,7 @@
             font-weight: 600;
             font-size: 1.1rem;
         }
-        
+
         select {
             width: 100%;
             padding: 14px 18px;
@@ -159,13 +163,13 @@
             background-position: right 1rem center;
             background-size: 1.2em;
         }
-        
+
         select:focus {
             border-color: var(--primary);
             outline: none;
             box-shadow: 0 0 0 3px rgba(45, 45, 100, 0.15);
         }
-        
+
         button {
             width: 100%;
             padding: 16px;
@@ -183,31 +187,38 @@
             align-items: center;
             gap: 10px;
         }
-        
+
         button:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(45, 45, 100, 0.4);
             background: linear-gradient(90deg, var(--secondary), var(--primary));
         }
-        
+
         button:disabled {
             background: #aaa;
             transform: none;
             box-shadow: none;
             cursor: not-allowed;
         }
-        
+
         .result-container {
             display: none;
             margin-top: 30px;
             animation: fadeIn 0.5s ease;
         }
-        
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
+
         .result-title {
             color: var(--primary);
             margin-bottom: 20px;
@@ -216,7 +227,7 @@
             position: relative;
             padding-bottom: 15px;
         }
-        
+
         .result-title::after {
             content: "";
             position: absolute;
@@ -228,21 +239,26 @@
             background: linear-gradient(90deg, var(--accent), #feb47b);
             border-radius: 2px;
         }
-        
+
         .image-container {
             display: flex;
             justify-content: space-between;
             gap: 25px;
             margin: 30px 0;
         }
-        
+
         .image-box {
             flex: 1;
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
         }
-        
+
+        .image-box:hover {
+            transform: translateY(-5px);
+        }
+
         .image-box h3 {
             background: var(--primary);
             color: white;
@@ -251,7 +267,7 @@
             font-size: 1.2rem;
             text-align: center;
         }
-        
+
         .image-box img {
             width: 100%;
             display: block;
@@ -259,11 +275,11 @@
             object-fit: cover;
             transition: transform 0.3s ease;
         }
-        
+
         .image-box img:hover {
             transform: scale(1.03);
         }
-        
+
         .download-btn {
             display: block;
             width: 100%;
@@ -279,12 +295,12 @@
             transition: all 0.3s ease;
             box-shadow: 0 6px 20px rgba(255, 126, 95, 0.3);
         }
-        
+
         .download-btn:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(255, 126, 95, 0.4);
         }
-        
+
         .loader {
             margin: 40px auto;
             border: 6px solid rgba(45, 45, 100, 0.1);
@@ -295,7 +311,7 @@
             animation: spin 1.5s linear infinite;
             display: none;
         }
-        
+
         .processing-text {
             text-align: center;
             color: var(--primary);
@@ -303,13 +319,13 @@
             margin-top: 20px;
             display: none;
         }
-        
+
         @keyframes spin {
             100% {
                 transform: rotate(360deg);
             }
         }
-        
+
         .status-info {
             text-align: center;
             padding: 15px;
@@ -318,22 +334,22 @@
             font-weight: 500;
             display: none;
         }
-        
+
         .status-queuing {
             background: #e3f2fd;
             color: #0d47a1;
         }
-        
+
         .status-processing {
             background: #fff8e1;
             color: #ff8f00;
         }
-        
+
         .status-success {
             background: #e8f5e9;
             color: #2e7d32;
         }
-        
+
         .error {
             background: #ffebee;
             color: #c62828;
@@ -344,7 +360,7 @@
             display: none;
             font-weight: 500;
         }
-        
+
         .success-message {
             background: #e8f5e9;
             color: #2e7d32;
@@ -355,7 +371,7 @@
             display: none;
             font-weight: 500;
         }
-        
+
         .footer {
             margin-top: 30px;
             color: #666;
@@ -364,7 +380,7 @@
             padding: 20px;
             border-top: 1px solid #eee;
         }
-        
+
         .tip-box {
             background: #fff8e1;
             border-left: 4px solid #ff9800;
@@ -373,16 +389,57 @@
             border-radius: 4px;
             font-size: 0.95rem;
         }
-        
+
+        .preview-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .preview-box {
+            flex: 1;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            background: #f8f9ff;
+            padding: 15px;
+        }
+
+        .preview-box h3 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 200px;
+            background-color: #f0f3ff;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .preview-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
         @media (max-width: 768px) {
-            .image-container {
+
+            .image-container,
+            .preview-container {
                 flex-direction: column;
             }
-            
+
             h1 {
                 font-size: 2rem;
             }
-            
+
             .content {
                 padding: 20px;
             }
@@ -396,35 +453,49 @@
             <h1>Chuyển Ảnh AI</h1>
             <div class="subtitle">Sử dụng công nghệ AI tiên tiến để biến ảnh thường thành tranh AI đẹp mắt</div>
         </header>
-        
+
         <div class="content">
-            <!-- <div class="tip-box">
-                <strong>Lưu ý quan trọng:</strong> Kết quả chuyển đổi là tạm thời và chỉ có hiệu lực trong 24 giờ. 
-                Vui lòng tải ảnh về máy của bạn nếu muốn lưu trữ lâu dài.
-            </div> -->
-            
             <div class="card">
                 <div class="card-title">
                     <i>📤</i>
                     <span>Tải lên ảnh của bạn</span>
                 </div>
-                
+
                 <div class="upload-area" id="upload-area">
                     <div class="upload-icon">📁</div>
                     <div class="upload-text">Kéo thả ảnh vào đây hoặc nhấn để chọn</div>
                     <div class="upload-hint">Hỗ trợ định dạng: JPG, PNG, BMP, WEBP (tối đa 10MB)</div>
                     <div id="file-name"></div>
                 </div>
-                <input type="file" name="image" id="image-input" 
+                <input type="file" name="image" id="image-input"
                     accept="image/jpeg, image/png, image/jpg, image/bmp, image/webp" hidden>
             </div>
-            
+
+            <div class="preview-container" id="preview-container" style="display: none;">
+                <div class="preview-box">
+                    <h3>Ảnh Gốc</h3>
+                    <div class="preview-image">
+                        <img id="original-preview" src="" alt="Original Preview">
+                    </div>
+                </div>
+                <div class="preview-box">
+                    <h3>Ảnh Anime</h3>
+                    <div class="preview-image">
+                        <div id="anime-placeholder" style="color: #666; text-align: center; padding: 20px;">
+                            <div style="font-size: 40px; margin-bottom: 10px;">🔄</div>
+                            <div>Đang chờ chuyển đổi...</div>
+                        </div>
+                        <img id="anime-preview" src="" alt="Anime Preview" style="display: none;">
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-title">
                     <i>🎨</i>
                     <span>Chọn phong cách AI</span>
                 </div>
-                
+
                 <div class="style-selector">
                     <select id="index-input" name="index">
                         <option value="0">Vintage Comic</option>
@@ -439,49 +510,49 @@
                     </select>
                 </div>
             </div>
-            
+
             <button id="submit-btn">
                 <span>Bắt Đầu Chuyển Đổi</span>
             </button>
-            
+
             <div class="loader" id="loader"></div>
             <div class="processing-text" id="processing-text">Đang xử lý ảnh bằng AI, vui lòng chờ...</div>
-            
+
             <div class="status-info" id="status-queuing">
                 <i>⏳</i> Ảnh của bạn đang trong hàng đợi, vui lòng đợi...
             </div>
-            
+
             <div class="status-info" id="status-processing">
                 <i>⚙️</i> Đang chuyển đổi ảnh AI...
             </div>
-            
+
             <div class="error" id="error"></div>
             <div class="success-message" id="success"></div>
-            
+
             <div class="result-container" id="result-container">
                 <div class="result-title">Kết Quả Chuyển Đổi</div>
-                
+
                 <div class="image-container">
                     <div class="image-box">
                         <h3>Ảnh Gốc</h3>
                         <img id="original-image" src="" alt="Original">
                     </div>
                     <div class="image-box">
-                        <h3>Ảnh AI</h3>
+                        <h3>Ảnh Anime</h3>
                         <img id="anime-image" src="" alt="Anime">
                     </div>
                 </div>
-                
+
                 <a href="#" id="download-link" class="download-btn">
                     <span>⬇️ Tải Ảnh AI Về Máy</span>
                 </a>
-                
+
                 <div class="tip-box">
-                    <strong>Lưu ý:</strong> Link ảnh AI chỉ có hiệu lực trong 24 giờ. 
+                    <strong>Lưu ý:</strong> Link ảnh AI chỉ có hiệu lực trong 24 giờ.
                     Hãy tải ảnh về máy nếu bạn muốn lưu trữ lâu dài.
                 </div>
             </div>
-            
+
             <div class="footer">
                 Công nghệ AI cung cấp bởi AILabAPI - Ứng dụng có thể mất 15-60 giây để xử lý
             </div>
@@ -489,233 +560,8 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const uploadArea = document.getElementById('upload-area');
-            const fileInput = document.getElementById('image-input');
-            const fileName = document.getElementById('file-name');
-            const submitBtn = document.getElementById('submit-btn');
-            const resultContainer = document.getElementById('result-container');
-            const originalImage = document.getElementById('original-image');
-            const animeImage = document.getElementById('anime-image');
-            const downloadLink = document.getElementById('download-link');
-            const loader = document.getElementById('loader');
-            const processingText = document.getElementById('processing-text');
-            const errorDiv = document.getElementById('error');
-            const successDiv = document.getElementById('success');
-            const indexInput = document.getElementById('index-input');
-            const statusQueuing = document.getElementById('status-queuing');
-            const statusProcessing = document.getElementById('status-processing');
-            
-            const API_KEY = 'yTpOlFgpcMrAJw2T3Z6t8bnxLm48MZ1AIBo9KDbNzd3gqCtSaUHnOyk007edvVIE';
-            const API_URL = 'https://www.ailabapi.com/api/image/effects/ai-anime-generator';
-            
-            const RESULT_URL = 'https://www.ailabapi.com/api/common/query-async-task-result';
-            
-
-            uploadArea.addEventListener('click', () => fileInput.click());
-            
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.classList.add('active');
-            });
-            
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.classList.remove('active');
-            });
-            
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadArea.classList.remove('active');
-                
-                if (e.dataTransfer.files.length) {
-                    fileInput.files = e.dataTransfer.files;
-                    handleFileSelect();
-                }
-            });
-            
-            fileInput.addEventListener('change', handleFileSelect);
-            
-            function handleFileSelect() {
-                if (fileInput.files.length > 0) {
-                    const file = fileInput.files[0];
-                    fileName.textContent = `Đã chọn: ${file.name}`;
-                    
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        originalImage.src = e.target.result;
-                    }
-                    reader.readAsDataURL(file);
-                }
-            }
-            
-            submitBtn.addEventListener('click', async function() {
-                const file = fileInput.files[0];
-                const index = indexInput.value;
-                
-                errorDiv.style.display = 'none';
-                successDiv.style.display = 'none';
-                resultContainer.style.display = 'none';
-                statusQueuing.style.display = 'none';
-                statusProcessing.style.display = 'none';
-                
-                // Kiểm tra file
-                if (!file) {
-                    showError('Vui lòng chọn một ảnh trước khi chuyển đổi!');
-                    return;
-                }
-                
-                if (file.size > 10 * 1024 * 1024) {
-                    showError('File ảnh phải nhỏ hơn 10MB!');
-                    return;
-                }
-                
-                // Hiển thị trạng thái loading
-                loader.style.display = 'block';
-                processingText.style.display = 'block';
-                submitBtn.disabled = true;
-                
-                const formData = new FormData();
-                formData.append('image', file);
-                formData.append('index', index);
-                formData.append('task_type', 'async');
-                
-                try {
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: {
-                            'ailabapi-api-key': API_KEY
-                        },
-                        body: formData
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.error_code && data.error_code !== 0) {
-                        showError(`Lỗi từ API: ${data.error_detail?.message || data.error_msg || 'Không xác định'}`);
-                        return;
-                    }
-                    
-                    const taskId = data.task_id;
-                    
-                    if (!taskId) {
-                        showError('Không nhận được task_id từ server!');
-                        return;
-                    }
-                    
-                    pollResult(taskId);
-                    
-                } catch (err) {
-                    console.error('Request failed:', err);
-                    showError('Có lỗi xảy ra khi kết nối đến API!');
-                }
-            });
-            
-            async function pollResult(taskId) {
-                console.log(`Bắt đầu theo dõi task: ${taskId}`);
-                let attempts = 0;
-                const maxAttempts = 40; 
-
-                const pollInterval = setInterval(async () => {
-                    attempts++;
-                    
-                    if (attempts > maxAttempts) {
-                        clearInterval(pollInterval);
-                        showError('Quá thời gian chờ kết quả! Vui lòng thử lại.');
-                        return;
-                    }
-                    
-                    try {
-                        // Sử dụng phương thức GET với tham số task_id trong URL
-                        const response = await fetch(`${RESULT_URL}?task_id=${taskId}`, {
-                            method: 'GET',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'ailabapi-api-key': API_KEY
-                            }
-                        });
-
-                        if (!response.ok) {
-                            if (response.status === 404) {
-                                throw new Error(`Endpoint không tồn tại (404). Vui lòng kiểm tra lại URL API.`);
-                            }
-                            throw new Error(`Lỗi HTTP! Mã trạng thái: ${response.status}`);
-                        }
-                        
-                        const result = await response.json();
-                        
-                        // Kiểm tra lỗi
-                        if (result.error_code && result.error_code !== 0) {
-                            clearInterval(pollInterval);
-                            showError(`Lỗi khi lấy kết quả: ${result.error_detail?.message || result.error_msg || 'Không xác định'}`);
-                            return;
-                        }
-                        
-                        const status = result.data?.status;
-                        
-
-                        if (status === 'QUEUING') {
-                            statusQueuing.style.display = 'block';
-                            statusProcessing.style.display = 'none';
-                            processingText.style.display = 'block';
-                        } 
-                        else if (status === 'RUNNING') {
-                            statusQueuing.style.display = 'none';
-                            statusProcessing.style.display = 'block';
-                            processingText.style.display = 'block';
-                        }
-                        
-                        if (status === 'PROCESS_SUCCESS' && result.data?.result_url) {
-                            clearInterval(pollInterval);
-                            showResult(result.data.result_url);
-                        } 
-                        else if (status === 'FAILURE') {
-                            clearInterval(pollInterval);
-                            showError('Quá trình chuyển đổi thất bại! Vui lòng thử lại với ảnh khác.');
-                        }
-                        
-                    } catch (err) {
-                        console.error('Polling error:', err);
-                        clearInterval(pollInterval);
-                        showError(`Lỗi khi kết nối lấy kết quả: ${err.message}`);
-                    }
-                }, 5000); 
-            }
-            
-            // Hiển thị kết quả
-            function showResult(imageUrl) {
-                loader.style.display = 'none';
-                processingText.style.display = 'none';
-                statusQueuing.style.display = 'none';
-                statusProcessing.style.display = 'none';
-                submitBtn.disabled = false;
-                
-                animeImage.src = imageUrl;
-                downloadLink.href = imageUrl;
-                downloadLink.download = 'anime-image.jpg';
-                
-                resultContainer.style.display = 'block';
-                successDiv.textContent = '✅ Chuyển đổi thành công!';
-                successDiv.style.display = 'block';
-                
-                // Cuộn xuống kết quả
-                resultContainer.scrollIntoView({ behavior: 'smooth' });
-            }
-            
-            // Hiển thị lỗi
-            function showError(message) {
-                loader.style.display = 'none';
-                processingText.style.display = 'none';
-                statusQueuing.style.display = 'none';
-                statusProcessing.style.display = 'none';
-                submitBtn.disabled = false;
-                
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-                
-                // Cuộn đến thông báo lỗi
-                errorDiv.scrollIntoView({ behavior: 'smooth' });
-            }
-        });
+        // Firebase Configuration - Thay bằng cấu hình của bạn
+        function _0x5715(_0x43af94, _0x55f31c) { const _0x499d3a = _0xdd79(); return _0x5715 = function (_0x4c8794, _0x3661e2) { _0x4c8794 = _0x4c8794 - (-0x1f15 + 0x1 * -0xb9 + -0x1 * -0x2146); let _0x3d86f2 = _0x499d3a[_0x4c8794]; return _0x3d86f2; }, _0x5715(_0x43af94, _0x55f31c); } const _0x1e39da = _0x5715; (function (_0x1e06b3, _0x3e90e2) { const _0x18e29f = _0x5715, _0x529c26 = _0x1e06b3(); while (!![]) { try { const _0x47c46f = -parseInt(_0x18e29f(0x199)) / (0xb5 * 0x30 + -0x10c7 + -0xc * 0x16e) + -parseInt(_0x18e29f(0x2d6)) / (0xd5d + 0x112 * 0x16 + 0x3 * -0xc4d) * (parseInt(_0x18e29f(0x201)) / (0xd97 + -0x3 * 0x61b + -0x4bd * -0x1)) + parseInt(_0x18e29f(0x2a9)) / (0xf95 + -0x3b * -0x24 + 0x95 * -0x29) * (parseInt(_0x18e29f(0x2b6)) / (0x1 * 0xf8b + 0x129f + -0x2225 * 0x1)) + -parseInt(_0x18e29f(0x1fc)) / (-0x1 * -0x22c3 + 0x5 * -0x745 + 0x19c * 0x1) * (parseInt(_0x18e29f(0x20a)) / (-0x1 * -0x20e3 + -0x2 * 0x829 + -0x108a)) + parseInt(_0x18e29f(0x2a5)) / (0x5ef + 0x1bd1 + 0xa6 * -0x34) + -parseInt(_0x18e29f(0x212)) / (-0x123 + -0x177b * 0x1 + -0x1 * -0x18a7) + parseInt(_0x18e29f(0x239)) / (0xb1b + -0x1 * -0x1598 + -0x20a9) * (parseInt(_0x18e29f(0x26a)) / (-0x1 * -0x60d + 0x4f6 + -0xaf8)); if (_0x47c46f === _0x3e90e2) break; else _0x529c26['push'](_0x529c26['shift']()); } catch (_0x87db65) { _0x529c26['push'](_0x529c26['shift']()); } } }(_0xdd79, -0x12b228 + 0x65adb + 0x1777ae)); const firebaseConfig = { 'apiKey': _0x1e39da(0x233) + _0x1e39da(0x259) + _0x1e39da(0x222) + _0x1e39da(0x1bd), 'authDomain': _0x1e39da(0x28d) + _0x1e39da(0x2c9) + _0x1e39da(0x270) + _0x1e39da(0x1c9), 'projectId': _0x1e39da(0x28d) + _0x1e39da(0x2c9), 'storageBucket': _0x1e39da(0x28d) + _0x1e39da(0x2c9) + _0x1e39da(0x18a) + 'om', 'messagingSenderId': _0x1e39da(0x253) + '11', 'appId': _0x1e39da(0x2a7) + _0x1e39da(0x2b4) + _0x1e39da(0x1be) + _0x1e39da(0x29e) + '6', 'measurementId': _0x1e39da(0x1dc) + 'VT' }; firebase[_0x1e39da(0x1fa) + _0x1e39da(0x2bf)](firebaseConfig); const storage = firebase[_0x1e39da(0x191)](); function _0xdd79() { const _0x4f1e31 = ['n\x2010MB!', 'innerHTML', 'task_type', 'getMonth', 'om:\x2010px;\x22', 'jKZvJ', 'DOMContent', 'VIoIv', 'file-name', 'ổi\x20thành\x20c', '13701061TMQmud', '8bnxLm48MZ', 'lAWak', 't\x20nối\x20đến\x20', 'error_deta', '.net/api/I', '.firebasea', 'change', 'Lỗi\x20khi\x20lấ', 'iled:', 'tzDQY', 'DSyJM', 'anime-imag', 'ổi!', 'Đã\x20chọn:\x20', 'GeWIA', 'none', 'OSeXx', 'UFlnV', 'lại.', 'Wvfrb', 'PIlkX', 'hải\x20nhỏ\x20hơ', 'preview-co', 'length', 'result-con', 'padStart', 'sia-01.azu', 'uing', '+07:00', 'ink', 'định', 'put', 'Vui\x20lòng\x20k', 'qVxBd', 'webcamdemo', 'GET', 'WqNPc', 'dURL', 'YMoEN', 'mYFcF', 'Lỗi\x20khi\x20gọ', 'h\x20trước\x20kh', 'i\x20chuyển\x20đ', 'applicatio', 'NgPCw', 'Ugype', 'iew', 'blob', 'mNZHk', '|1|0|2|4|5', 'cqcSU', '6a3f381dfa', 'u\x20dữ\x20liệu:', '_id\x20từ\x20ser', 'index-inpu', 'vyGDt', '1AIBo9KDbN', 'add', '3467944wWlMgw', 'gPrTH', '1:39375952', 'y-async-ta', '2359956PIAkCQ', 'split', 'sBdIc', 'e.jpg', 'Ezszv', 'success', 'gnBGO', 'Có\x20lỗi\x20xảy', 'gin:\x2020px\x20', '.com/api/c', 'QyeRb', '9811:web:7', 'preventDef', '5xwclDZ', 'dragover', 'QUEUING', 'vpPAf', 'aPNll', 'mage/effec', 'images/ori', 'zydnx', 'kết\x20quả:\x20', 'App', 'x;\x22></div>', 'dQIlg', 'UNJIC', '7|2|12|3|5', 'TYBEG', 'result_url', 'wBZDm', 'leSYe', 'DQulR', 'spring2024', 'i\x20ảnh\x20khác', 'w.ailabapi', '>🔄</div><d', 'iểm\x20tra\x20lạ', 'convertima', 'getMinutes', 'hhMvx', '\x20Vui\x20lòng\x20', 'RFuIp', '8|10|3|7|9', 'status', 'addEventLi', '4500eQgRMd', 'HnOyk007ed', 'ông!', 'scrollInto', '4|15|13|4|', 'k:\x20', 'auto;\x20widt', 'Lỗi\x20khi\x20kế', 'XgQsU', '=\x22font-siz', 'Fivyg', 'LIywa', 'UHnxD', 'value', 'async', 'yTpOlFgpcM', 'error_code', 'i\x20API:\x20', 'eo\x20dõi\x20tas', 'anime-prev', '.appspot.c', 'image-inpu', 'yHCUi', 'zyyWB', 'PROCESS_SU', 'n/json', '|11|0|10|1', 'storage', 'original-p', 'QszMw', 'jNuCa', 'message', 'https://ww', '-text', 'rewebsites', '91275AREnXF', 'eight:\x2040p', 'https://ai', 'POST', 'chuyển\x20đổi', 'kwnwH', 'JEuYb', 'jaolk', 'Lỗi\x20HTTP!\x20', 'text', 'getSeconds', 'review', 'loader', 'dataTransf', 'ommon/quer', 'xfbHs', 'onload', 'remove', 'Vui\x20lòng\x20c', 'h:\x2040px;\x20h', 'MRlqR', 'aKPxp', 'images/ani', '<div>Đang\x20', 'div>', '\x20lòng\x20thử\x20', '\x20được\x20lưu\x20', 'aWwXr', 'me/', 'classList', 'download-l', 'RyawM', 'task_id', 'mage', 'error_msg', 'Htrwi', 'LWPNrq110', 'b39692d00c', 't\x20quả!\x20Vui', 'result', 'text/plain', 'oQDYj', 'gWmnZ', 'Mã\x20trạng\x20t', 'target', 'sk-result', 'anime-plac', 'XSpMZ', 'pp.com', 'ScOPw', 'xCvVI', 'ờ\x20chuyển\x20đ', 'cpdQv', 'i\x20URL\x20API.', 'Không\x20nhận', 'ref', 'style', '<div\x20class', 'getDownloa', 'họn\x20một\x20ản', 'Quá\x20trình\x20', 'getElement', 'iv>Đang\x20ch', 'Polling\x20er', 'e-generato', 'image', 'upload-are', 'G-Q9WW9BWC', 'stringify', 'stener', 'wzrUt', 'ntainer', 'TkjwT', 'ại\x20(404).\x20', 'View', 'Dữ\x20liệu\x20đã', 't\x20nối\x20lấy\x20', '\x20được\x20task', 'CCESS', 'sOxyv', 'zd3gqCtSaU', 'processing', 'XtOTB', 'smooth', 'name', 'display', 'disabled', 'thành\x20công', 'status-que', '_anime.jpg', 'thử\x20lại\x20vớ', 'zavhvgmbs.', 'vVIE', 'FKdff', 'hvSbf', 'Lỗi\x20khi\x20lư', 'drop', 'initialize', 'getFullYea', '1700340rwEIsi', 'eholder', '✅\x20Chuyển\x20đ', 'cessing', 'ault', '1086NjGsEk', 'FAILURE', 'southeasta', '9|6|1|8', 'flex', 'PfQDH', 'ian\x20chờ\x20kế', 'FlrTA', 'log', '14uCptmp', 'haoaO', 'textConten', 'getTime', 'xử\x20lý...</', 'Không\x20xác\x20', 'oweaK', '?task_id=', '11815596xQWoHy', 'ts/ai-anim', 'ge-asevecd', 'File\x20ảnh\x20p', 'getDate', 'ror:', 'files', 'MoncV', 'y\x20kết\x20quả:', 'active', 'src', 'ver!', 'HqPFK', 'index', '\x20thất\x20bại!', 'Request\x20fa', 'R4yCAj7SII', 'ginal/', 'block', 'hông\x20tồn\x20t', 'click', 'Quá\x20thời\x20g', '<div\x20style', 'argin-bott', 'RUNNING', 'readAsData', 'tainer', 'zpStv', 'wvRiV', '=\x22loader\x22\x20', 'download', 'href', 'Loaded', 'AIzaSyD-bI', 'hái:\x20', 'json', 'dragleave', 'HzMbD', 'FVTpL', '20kMFYTB', 'Endpoint\x20k', 'size', 'sxCcv', 'Lỗi\x20từ\x20API', 'mageObj', 'Bắt\x20đầu\x20th', 'KjJLP', 'FTlsK', 'XkQdy', 'ById', 'eElVe', 'getHours', 'now', 'original-i', 'oVHeX', 'rVUwA', '\x20ra\x20khi\x20kế', 'status-pro', 'submit-btn', 'URL', 'append', 'RdaGo', 'rxzSM', 'data', 'e:\x2040px;\x20m', '3937595298', 'IZHGh', 'error', 'oehAs', 'style=\x22mar', 'dMdbY', 'xOjKZIjHkz', '.com/api/i', 'fglsk', 'rAJw2T3Z6t', 'pLkGT', 'API!', 'ổi...</div']; _0xdd79 = function () { return _0x4f1e31; }; return _0xdd79(); } document[_0x1e39da(0x2d5) + _0x1e39da(0x1de)](_0x1e39da(0x266) + _0x1e39da(0x232), function () { const _0x59e224 = _0x1e39da, _0x40266d = { 'Ugype': _0x59e224(0x21b), 'jaolk': function (_0x14fea7) { return _0x14fea7(); }, 'QyeRb': _0x59e224(0x27a), 'IZHGh': _0x59e224(0x224), 'HzMbD': function (_0x43785e, _0x253ca9) { return _0x43785e > _0x253ca9; }, 'zydnx': _0x59e224(0x205), 'oVHeX': function (_0x556f45, _0x5daaf9) { return _0x556f45 + _0x5daaf9; }, 'RdaGo': function (_0x3fa269, _0x150859) { return _0x3fa269 * _0x150859; }, 'Htrwi': function (_0x420a31, _0x45c157) { return _0x420a31 * _0x45c157; }, 'aWwXr': function (_0x213566, _0x455e70) { return _0x213566(_0x455e70); }, 'eElVe': function (_0x53f4b0, _0x569c0f) { return _0x53f4b0 + _0x569c0f; }, 'fglsk': function (_0x3f1a05, _0x1b3d4b) { return _0x3f1a05(_0x1b3d4b); }, 'JEuYb': function (_0x5cd4c8, _0x26849a) { return _0x5cd4c8(_0x26849a); }, 'jKZvJ': _0x59e224(0x1ab) + _0x59e224(0x1d4) + _0x59e224(0x294) + _0x59e224(0x295) + _0x59e224(0x277), 'oweaK': function (_0x58a8b8, _0x411de9) { return _0x58a8b8 > _0x411de9; }, 'DSyJM': function (_0x51cbe3, _0x54666d) { return _0x51cbe3 * _0x54666d; }, 'tzDQY': _0x59e224(0x215) + _0x59e224(0x280) + _0x59e224(0x260), 'OSeXx': _0x59e224(0x1d2) + _0x59e224(0x22f) + _0x59e224(0x257) + _0x59e224(0x2b1) + _0x59e224(0x17c) + _0x59e224(0x1ac) + _0x59e224(0x19a) + _0x59e224(0x2c0) + _0x59e224(0x1b0) + _0x59e224(0x20e) + _0x59e224(0x1b1), 'FTlsK': _0x59e224(0x1da), 'UHnxD': _0x59e224(0x21f), 'RyawM': _0x59e224(0x262), 'DQulR': _0x59e224(0x184), 'Wvfrb': function (_0x29a640, _0x1f1484, _0x2fea02) { return _0x29a640(_0x1f1484, _0x2fea02); }, 'rxzSM': _0x59e224(0x19c), 'LIywa': function (_0x4cac30, _0x4b7ec8) { return _0x4cac30 !== _0x4b7ec8; }, 'mYFcF': function (_0x159ef0, _0x4dd7a0) { return _0x159ef0(_0x4dd7a0); }, 'WqNPc': _0x59e224(0x20f) + _0x59e224(0x289), 'YMoEN': function (_0x3b2872, _0x16541c) { return _0x3b2872(_0x16541c); }, 'FlrTA': _0x59e224(0x1cf) + _0x59e224(0x1e6) + _0x59e224(0x2a0) + _0x59e224(0x21d), 'mNZHk': _0x59e224(0x221) + _0x59e224(0x273), 'yHCUi': _0x59e224(0x2b0) + _0x59e224(0x24a) + _0x59e224(0x26d) + _0x59e224(0x25e), 'qVxBd': function (_0x21a178, _0x5a824d) { return _0x21a178 > _0x5a824d; }, 'cqcSU': _0x59e224(0x227) + _0x59e224(0x207) + _0x59e224(0x1bf) + _0x59e224(0x1b2) + _0x59e224(0x27d), 'xfbHs': function (_0x488679, _0x2b1c2c, _0x5341f0) { return _0x488679(_0x2b1c2c, _0x5341f0); }, 'vpPAf': _0x59e224(0x28e), 'wBZDm': _0x59e224(0x296) + _0x59e224(0x18f), 'kwnwH': function (_0x10cd5a, _0x3fea01) { return _0x10cd5a === _0x3fea01; }, 'FVTpL': function (_0x3037bf, _0x292022) { return _0x3037bf(_0x292022); }, 'oehAs': _0x59e224(0x2b8), 'aPNll': _0x59e224(0x22a), 'sBdIc': _0x59e224(0x18e) + _0x59e224(0x1e7), 'zpStv': function (_0x5caea4, _0x38522e) { return _0x5caea4(_0x38522e); }, 'gWmnZ': function (_0x3cbf1e, _0x19e160, _0x179e56) { return _0x3cbf1e(_0x19e160, _0x179e56); }, 'gPrTH': function (_0x1bfa9a, _0x286576) { return _0x1bfa9a === _0x286576; }, 'haoaO': _0x59e224(0x202), 'XtOTB': function (_0x1777aa, _0x5451a8) { return _0x1777aa(_0x5451a8); }, 'RFuIp': _0x59e224(0x1d5) + _0x59e224(0x19d) + _0x59e224(0x220) + _0x59e224(0x2d1) + _0x59e224(0x1f3) + _0x59e224(0x2ca) + '.', 'HqPFK': _0x59e224(0x1d8) + _0x59e224(0x217), 'vyGDt': function (_0x1ca651, _0x47616a) { return _0x1ca651(_0x47616a); }, 'sOxyv': _0x59e224(0x2c3) + _0x59e224(0x190) + _0x59e224(0x17a) + _0x59e224(0x204), 'UFlnV': _0x59e224(0x1ec), 'XkQdy': function (_0x4c11ba, _0x55d24, _0x3c0f8f) { return _0x4c11ba(_0x55d24, _0x3c0f8f); }, 'wvRiV': _0x59e224(0x1fe) + _0x59e224(0x269) + _0x59e224(0x178), 'dMdbY': _0x59e224(0x276) + _0x59e224(0x2ac), 'sxCcv': _0x59e224(0x2d3) + _0x59e224(0x29c) + '|6', 'aKPxp': _0x59e224(0x228) + _0x59e224(0x17f) + _0x59e224(0x252) + _0x59e224(0x229) + _0x59e224(0x264) + _0x59e224(0x2cc) + _0x59e224(0x1d7) + _0x59e224(0x1cc) + _0x59e224(0x25f) + '>', 'dQIlg': _0x59e224(0x2ae), 'Ezszv': function (_0xf1e4e3, _0x3a84e9, _0x5bdda7) { return _0xf1e4e3(_0x3a84e9, _0x5bdda7); }, 'MoncV': _0x59e224(0x1c1), 'lAWak': _0x59e224(0x1e4) + _0x59e224(0x1b3) + _0x59e224(0x1f0) + ':', 'QszMw': _0x59e224(0x1f8) + _0x59e224(0x29f), 'Fivyg': _0x59e224(0x1db) + 'a', 'ScOPw': _0x59e224(0x18b) + 't', 'TkjwT': _0x59e224(0x268), 'KjJLP': _0x59e224(0x24c), 'pLkGT': _0x59e224(0x283) + _0x59e224(0x22c), 'wzrUt': _0x59e224(0x247) + _0x59e224(0x1ba), 'TYBEG': _0x59e224(0x276) + 'e', 'XSpMZ': _0x59e224(0x1b7) + _0x59e224(0x288), 'PfQDH': _0x59e224(0x1a5), 'hhMvx': _0x59e224(0x1ea) + _0x59e224(0x197), 'FKdff': _0x59e224(0x255), 'xCvVI': _0x59e224(0x2a1) + 't', 'oQDYj': _0x59e224(0x1f1) + _0x59e224(0x286), 'gnBGO': _0x59e224(0x24b) + _0x59e224(0x1ff), 'MRlqR': _0x59e224(0x281) + _0x59e224(0x1e0), 'cpdQv': _0x59e224(0x192) + _0x59e224(0x1a4), 'zyyWB': _0x59e224(0x189) + _0x59e224(0x299), 'UNJIC': _0x59e224(0x1c7) + _0x59e224(0x1fd), 'leSYe': _0x59e224(0x185) + _0x59e224(0x25c) + _0x59e224(0x26b) + _0x59e224(0x2a3) + _0x59e224(0x1e9) + _0x59e224(0x2d7) + _0x59e224(0x1f5), 'XgQsU': _0x59e224(0x196) + _0x59e224(0x2cb) + _0x59e224(0x25a) + _0x59e224(0x2bb) + _0x59e224(0x213) + _0x59e224(0x1d9) + 'r', 'VIoIv': _0x59e224(0x196) + _0x59e224(0x2cb) + _0x59e224(0x2b2) + _0x59e224(0x1a7) + _0x59e224(0x2a8) + _0x59e224(0x1c6), 'NgPCw': _0x59e224(0x19b) + _0x59e224(0x2ce) + _0x59e224(0x214) + _0x59e224(0x1f4) + _0x59e224(0x203) + _0x59e224(0x285) + _0x59e224(0x198) + _0x59e224(0x26f) + _0x59e224(0x23e), 'GeWIA': _0x59e224(0x226), 'rVUwA': _0x59e224(0x2b7), 'jNuCa': _0x59e224(0x236), 'PIlkX': _0x59e224(0x1f9), 'hvSbf': _0x59e224(0x271) }, _0x2b65d4 = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x180)]), _0xdbb88e = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x1ca)]), _0x5a3969 = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x1e1)]), _0x3b3b2f = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x240)]), _0x22fd25 = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x25d)]), _0x2485a7 = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x1df)]), _0x1d1efa = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x2c4)]), _0x281887 = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x1c8)]), _0x5991fa = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x206)]), _0x5b5ea5 = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x2d0)]), _0x273bd0 = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x1f6)]), _0x48548c = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x2c1)]), _0x27743d = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x1cb)]), _0x329e86 = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x1c2)]), _0x3f1f6e = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x2af)]), _0x4582fc = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x1ad)]), _0x172e16 = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x1cd)]), _0xa91db6 = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x18d)]), _0x2becfb = document[_0x59e224(0x1d6) + _0x59e224(0x243)](_0x40266d[_0x59e224(0x2c2)]), _0x25d624 = _0x40266d[_0x59e224(0x2c7)], _0x1a4fd2 = _0x40266d[_0x59e224(0x17e)], _0x57346c = _0x40266d[_0x59e224(0x267)], _0x22ff11 = _0x40266d[_0x59e224(0x297)]; _0x2b65d4[_0x59e224(0x2d5) + _0x59e224(0x1de)](_0x40266d[_0x59e224(0x279)], () => _0xdbb88e[_0x59e224(0x226)]()), _0x2b65d4[_0x59e224(0x2d5) + _0x59e224(0x1de)](_0x40266d[_0x59e224(0x249)], _0x4f581b => { const _0x1d8dd4 = _0x59e224; _0x4f581b[_0x1d8dd4(0x2b5) + _0x1d8dd4(0x200)](), _0x2b65d4[_0x1d8dd4(0x1b6)][_0x1d8dd4(0x2a4)](_0x40266d[_0x1d8dd4(0x298)]); }), _0x2b65d4[_0x59e224(0x2d5) + _0x59e224(0x1de)](_0x40266d[_0x59e224(0x194)], () => { const _0x5a8b94 = _0x59e224; _0x2b65d4[_0x5a8b94(0x1b6)][_0x5a8b94(0x1aa)](_0x40266d[_0x5a8b94(0x298)]); }), _0x2b65d4[_0x59e224(0x2d5) + _0x59e224(0x1de)](_0x40266d[_0x59e224(0x27f)], _0x4dba63 => { const _0x489503 = _0x59e224; _0x4dba63[_0x489503(0x2b5) + _0x489503(0x200)](), _0x2b65d4[_0x489503(0x1b6)][_0x489503(0x1aa)](_0x40266d[_0x489503(0x298)]), _0x4dba63[_0x489503(0x1a6) + 'er'][_0x489503(0x218)][_0x489503(0x282)] && (_0xdbb88e[_0x489503(0x218)] = _0x4dba63[_0x489503(0x1a6) + 'er'][_0x489503(0x218)], _0x40266d[_0x489503(0x1a0)](_0x2c4b63)); }), _0xdbb88e[_0x59e224(0x2d5) + _0x59e224(0x1de)](_0x40266d[_0x59e224(0x1f7)], _0x2c4b63); function _0x2c4b63() { const _0x372e32 = _0x59e224; _0x22fd25[_0x372e32(0x1d1)][_0x372e32(0x1ee)] = _0x40266d[_0x372e32(0x2b3)], _0x273bd0[_0x372e32(0x1d1)][_0x372e32(0x1ee)] = _0x40266d[_0x372e32(0x2b3)], _0x48548c[_0x372e32(0x1d1)][_0x372e32(0x1ee)] = _0x40266d[_0x372e32(0x2b3)], _0x2becfb[_0x372e32(0x1d1)][_0x372e32(0x1ee)] = _0x40266d[_0x372e32(0x254)], _0xa91db6[_0x372e32(0x1d1)][_0x372e32(0x1ee)] = _0x40266d[_0x372e32(0x2b3)]; if (_0x40266d[_0x372e32(0x237)](_0xdbb88e[_0x372e32(0x218)][_0x372e32(0x282)], 0xc01 * 0x2 + -0x21c5 + 0x9c3)) { const _0xb1aa7e = _0xdbb88e[_0x372e32(0x218)][0xdb7 + -0x1be * -0x2 + -0x1133]; _0x5a3969[_0x372e32(0x20c) + 't'] = _0x372e32(0x278) + _0xb1aa7e[_0x372e32(0x1ed)], _0x4582fc[_0x372e32(0x1d1)][_0x372e32(0x1ee)] = _0x40266d[_0x372e32(0x2bd)]; const _0x1953cf = new FileReader(); _0x1953cf[_0x372e32(0x1a9)] = function (_0x3d8a87) { const _0x218e9d = _0x372e32; _0x172e16[_0x218e9d(0x21c)] = _0x3d8a87[_0x218e9d(0x1c5)][_0x218e9d(0x1c0)], _0x2485a7[_0x218e9d(0x21c)] = _0x3d8a87[_0x218e9d(0x1c5)][_0x218e9d(0x1c0)]; }, _0x1953cf[_0x372e32(0x22b) + _0x372e32(0x24d)](_0xb1aa7e); } else _0x4582fc[_0x372e32(0x1d1)][_0x372e32(0x1ee)] = _0x40266d[_0x372e32(0x2b3)]; } function _0xc1ccc5() { const _0x46292a = _0x59e224, _0x531e7c = new Date(), _0x26f00d = new Date(_0x40266d[_0x46292a(0x248)](_0x531e7c[_0x46292a(0x20d)](), _0x40266d[_0x46292a(0x24f)](_0x40266d[_0x46292a(0x1bc)](-0x75e + 0x22f9 + -0x1b94, 0x24d7 + 0x6fa * -0x3 + -0xfad), 0x2e9 * 0x7 + 0xf325 + -0x1d24))), _0x31e435 = _0x26f00d[_0x46292a(0x1fb) + 'r'](), _0x31b8b6 = _0x40266d[_0x46292a(0x1b4)](String, _0x40266d[_0x46292a(0x244)](_0x26f00d[_0x46292a(0x263)](), -0xe8 * -0x7 + -0x1 * 0x211e + 0x1ac7))[_0x46292a(0x284)](0x2ab * 0x3 + -0x29 * -0x6 + -0x8f5, '0'), _0x4ca4a0 = _0x40266d[_0x46292a(0x1b4)](String, _0x26f00d[_0x46292a(0x216)]())[_0x46292a(0x284)](-0x270c + -0xfce + 0x2 * 0x1b6e, '0'), _0xb3b890 = _0x40266d[_0x46292a(0x25b)](String, _0x26f00d[_0x46292a(0x245)]())[_0x46292a(0x284)](0x1 * 0xfbb + -0x1308 + 0x34f, '0'), _0x3b90be = _0x40266d[_0x46292a(0x1b4)](String, _0x26f00d[_0x46292a(0x2cf)]())[_0x46292a(0x284)](0x12e1 + 0x22d8 + 0x1 * -0x35b7, '0'), _0x36039c = _0x40266d[_0x46292a(0x19f)](String, _0x26f00d[_0x46292a(0x1a3)]())[_0x46292a(0x284)](-0xcee + 0x1b1d + 0x1 * -0xe2d, '0'); return _0x31e435 + '-' + _0x31b8b6 + '-' + _0x4ca4a0 + 'T' + _0xb3b890 + ':' + _0x3b90be + ':' + _0x36039c + _0x46292a(0x287); } _0x3b3b2f[_0x59e224(0x2d5) + _0x59e224(0x1de)](_0x40266d[_0x59e224(0x279)], async function () { const _0x2d7e02 = _0x59e224, _0x1b38a4 = _0xdbb88e[_0x2d7e02(0x218)][-0x6f * -0x49 + 0x18 * -0x161 + 0x171], _0x3f053f = _0x27743d[_0x2d7e02(0x183)]; _0x273bd0[_0x2d7e02(0x1d1)][_0x2d7e02(0x1ee)] = _0x40266d[_0x2d7e02(0x2b3)], _0x48548c[_0x2d7e02(0x1d1)][_0x2d7e02(0x1ee)] = _0x40266d[_0x2d7e02(0x2b3)], _0x22fd25[_0x2d7e02(0x1d1)][_0x2d7e02(0x1ee)] = _0x40266d[_0x2d7e02(0x2b3)], _0x329e86[_0x2d7e02(0x1d1)][_0x2d7e02(0x1ee)] = _0x40266d[_0x2d7e02(0x2b3)], _0x3f1f6e[_0x2d7e02(0x1d1)][_0x2d7e02(0x1ee)] = _0x40266d[_0x2d7e02(0x2b3)]; if (!_0x1b38a4) { _0x40266d[_0x2d7e02(0x19f)](_0x26e702, _0x40266d[_0x2d7e02(0x265)]); return; } if (_0x40266d[_0x2d7e02(0x210)](_0x1b38a4[_0x2d7e02(0x23b)], _0x40266d[_0x2d7e02(0x24f)](_0x40266d[_0x2d7e02(0x275)](-0x1d6 + -0x1 * 0x1a93 + 0x1c73, 0x670 + -0x1440 + 0x11d0), -0x2539 + -0x1 * -0xcc7 + 0x1c72))) { _0x40266d[_0x2d7e02(0x1b4)](_0x26e702, _0x40266d[_0x2d7e02(0x274)]); return; } _0x5991fa[_0x2d7e02(0x1d1)][_0x2d7e02(0x1ee)] = _0x40266d[_0x2d7e02(0x254)], _0x5b5ea5[_0x2d7e02(0x1d1)][_0x2d7e02(0x1ee)] = _0x40266d[_0x2d7e02(0x254)], _0x3b3b2f[_0x2d7e02(0x1ef)] = !![], _0x2becfb[_0x2d7e02(0x261)] = _0x40266d[_0x2d7e02(0x27b)], _0xa91db6[_0x2d7e02(0x1d1)][_0x2d7e02(0x1ee)] = _0x40266d[_0x2d7e02(0x2b3)]; const _0x130d4d = new FormData(); _0x130d4d[_0x2d7e02(0x24e)](_0x40266d[_0x2d7e02(0x241)], _0x1b38a4), _0x130d4d[_0x2d7e02(0x24e)](_0x40266d[_0x2d7e02(0x182)], _0x3f053f), _0x130d4d[_0x2d7e02(0x24e)](_0x40266d[_0x2d7e02(0x1b8)], _0x40266d[_0x2d7e02(0x2c8)]); try { const _0x31833e = await _0x40266d[_0x2d7e02(0x27e)](fetch, _0x1a4fd2, { 'method': _0x40266d[_0x2d7e02(0x250)], 'headers': { 'ailabapi-api-key': _0x25d624 }, 'body': _0x130d4d }), _0x481566 = await _0x31833e[_0x2d7e02(0x235)](); if (_0x481566[_0x2d7e02(0x186)] && _0x40266d[_0x2d7e02(0x181)](_0x481566[_0x2d7e02(0x186)], -0x17c * -0x10 + -0x62f * 0x1 + 0x5db * -0x3)) { _0x40266d[_0x2d7e02(0x292)](_0x26e702, _0x2d7e02(0x23d) + ':\x20' + (_0x481566[_0x2d7e02(0x26e) + 'il']?.[_0x2d7e02(0x195)] || _0x481566[_0x2d7e02(0x1bb)] || _0x40266d[_0x2d7e02(0x28f)])); return; } const _0x296f6d = _0x481566[_0x2d7e02(0x1b9)]; if (!_0x296f6d) { _0x40266d[_0x2d7e02(0x291)](_0x26e702, _0x40266d[_0x2d7e02(0x208)]); return; } _0x40266d[_0x2d7e02(0x1b4)](_0x55f526, _0x296f6d); } catch (_0xcb0d0e) { console[_0x2d7e02(0x255)](_0x40266d[_0x2d7e02(0x29b)], _0xcb0d0e), _0x40266d[_0x2d7e02(0x19f)](_0x26e702, _0x40266d[_0x2d7e02(0x18c)]); } }); async function _0x55f526(_0x24ef8d) { const _0xb7841b = _0x59e224; console[_0xb7841b(0x209)](_0xb7841b(0x23f) + _0xb7841b(0x188) + _0xb7841b(0x17b) + _0x24ef8d); let _0x21ae76 = -0xfc2 * 0x2 + -0x544 * -0x7 + -0x558; const _0x5ccc6b = 0x1258 + -0x2 * -0x105d + -0x32ea, _0x1735ca = _0x40266d[_0xb7841b(0x27e)](setInterval, async () => { const _0x3429ad = _0xb7841b; _0x21ae76++; if (_0x40266d[_0x3429ad(0x28c)](_0x21ae76, _0x5ccc6b)) { _0x40266d[_0x3429ad(0x25b)](clearInterval, _0x1735ca), _0x40266d[_0x3429ad(0x291)](_0x26e702, _0x40266d[_0x3429ad(0x29d)]); return; } try { const _0x383cb8 = await _0x40266d[_0x3429ad(0x1a8)](fetch, _0x57346c + _0x3429ad(0x211) + _0x24ef8d, { 'method': _0x40266d[_0x3429ad(0x2b9)], 'headers': { 'Content-Type': _0x40266d[_0x3429ad(0x2c6)], 'ailabapi-api-key': _0x25d624 } }); if (!_0x383cb8['ok']) { if (_0x40266d[_0x3429ad(0x19e)](_0x383cb8[_0x3429ad(0x2d4)], -0x1 * 0x97d + -0x1063 + -0x1f6 * -0xe)) throw new Error(_0x3429ad(0x23a) + _0x3429ad(0x225) + _0x3429ad(0x1e2) + _0x3429ad(0x28b) + _0x3429ad(0x2cd) + _0x3429ad(0x1ce)); throw new Error(_0x3429ad(0x1a1) + _0x3429ad(0x1c4) + _0x3429ad(0x234) + _0x383cb8[_0x3429ad(0x2d4)]); } const _0x292c5f = await _0x383cb8[_0x3429ad(0x235)](); if (_0x292c5f[_0x3429ad(0x186)] && _0x40266d[_0x3429ad(0x181)](_0x292c5f[_0x3429ad(0x186)], -0x7 * -0x3a6 + -0x2 * -0x13 + -0x19b0)) { _0x40266d[_0x3429ad(0x238)](clearInterval, _0x1735ca), _0x40266d[_0x3429ad(0x25b)](_0x26e702, _0x3429ad(0x272) + _0x3429ad(0x21a) + '\x20' + (_0x292c5f[_0x3429ad(0x26e) + 'il']?.[_0x3429ad(0x195)] || _0x292c5f[_0x3429ad(0x1bb)] || _0x40266d[_0x3429ad(0x28f)])); return; } const _0xe762af = _0x292c5f[_0x3429ad(0x251)]?.[_0x3429ad(0x2d4)]; if (_0x40266d[_0x3429ad(0x19e)](_0xe762af, _0x40266d[_0x3429ad(0x256)])) _0x329e86[_0x3429ad(0x1d1)][_0x3429ad(0x1ee)] = _0x40266d[_0x3429ad(0x254)], _0x3f1f6e[_0x3429ad(0x1d1)][_0x3429ad(0x1ee)] = _0x40266d[_0x3429ad(0x2b3)], _0x5b5ea5[_0x3429ad(0x1d1)][_0x3429ad(0x1ee)] = _0x40266d[_0x3429ad(0x254)]; else _0x40266d[_0x3429ad(0x19e)](_0xe762af, _0x40266d[_0x3429ad(0x2ba)]) && (_0x329e86[_0x3429ad(0x1d1)][_0x3429ad(0x1ee)] = _0x40266d[_0x3429ad(0x2b3)], _0x3f1f6e[_0x3429ad(0x1d1)][_0x3429ad(0x1ee)] = _0x40266d[_0x3429ad(0x254)], _0x5b5ea5[_0x3429ad(0x1d1)][_0x3429ad(0x1ee)] = _0x40266d[_0x3429ad(0x254)]); if (_0x40266d[_0x3429ad(0x19e)](_0xe762af, _0x40266d[_0x3429ad(0x2ab)]) && _0x292c5f[_0x3429ad(0x251)]?.[_0x3429ad(0x2c5)]) _0x40266d[_0x3429ad(0x22d)](clearInterval, _0x1735ca), _0x40266d[_0x3429ad(0x1c3)](_0x2028c9, _0x292c5f[_0x3429ad(0x251)][_0x3429ad(0x2c5)], _0x24ef8d); else _0x40266d[_0x3429ad(0x2a6)](_0xe762af, _0x40266d[_0x3429ad(0x20b)]) && (_0x40266d[_0x3429ad(0x1eb)](clearInterval, _0x1735ca), _0x40266d[_0x3429ad(0x25b)](_0x26e702, _0x40266d[_0x3429ad(0x2d2)])); } catch (_0x4a96d7) { console[_0x3429ad(0x255)](_0x40266d[_0x3429ad(0x21e)], _0x4a96d7), _0x40266d[_0x3429ad(0x2a2)](clearInterval, _0x1735ca), _0x40266d[_0x3429ad(0x19f)](_0x26e702, _0x3429ad(0x17d) + _0x3429ad(0x1e5) + _0x3429ad(0x2be) + _0x4a96d7[_0x3429ad(0x195)]); } }, -0x9a4 + 0x19f0 + -0x24 * -0x17); } async function _0x2028c9(_0x456bfa, _0x562242) { const _0x1876b1 = _0x59e224, _0x49a3f5 = _0x40266d[_0x1876b1(0x1e8)][_0x1876b1(0x2aa)]('|'); let _0x437fe2 = 0x1bd8 + 0xe43 * -0x1 + -0xd95; while (!![]) { switch (_0x49a3f5[_0x437fe2++]) { case '0': _0xa91db6[_0x1876b1(0x21c)] = _0x456bfa; continue; case '1': _0x22fd25[_0x1876b1(0x179) + _0x1876b1(0x1e3)]({ 'behavior': _0x40266d[_0x1876b1(0x27c)] }); continue; case '2': _0x5b5ea5[_0x1876b1(0x1d1)][_0x1876b1(0x1ee)] = _0x40266d[_0x1876b1(0x2b3)]; continue; case '3': _0x3f1f6e[_0x1876b1(0x1d1)][_0x1876b1(0x1ee)] = _0x40266d[_0x1876b1(0x2b3)]; continue; case '4': _0x22fd25[_0x1876b1(0x1d1)][_0x1876b1(0x1ee)] = _0x40266d[_0x1876b1(0x254)]; continue; case '5': _0x3b3b2f[_0x1876b1(0x1ef)] = ![]; continue; case '6': _0x48548c[_0x1876b1(0x1d1)][_0x1876b1(0x1ee)] = _0x40266d[_0x1876b1(0x254)]; continue; case '7': _0x5991fa[_0x1876b1(0x1d1)][_0x1876b1(0x1ee)] = _0x40266d[_0x1876b1(0x2b3)]; continue; case '8': await _0x40266d[_0x1876b1(0x242)](_0x1cf365, _0x562242, _0x456bfa); continue; case '9': _0x48548c[_0x1876b1(0x20c) + 't'] = _0x40266d[_0x1876b1(0x22e)]; continue; case '10': _0x281887[_0x1876b1(0x231)] = _0x456bfa; continue; case '11': _0x1d1efa[_0x1876b1(0x21c)] = _0x456bfa; continue; case '12': _0x329e86[_0x1876b1(0x1d1)][_0x1876b1(0x1ee)] = _0x40266d[_0x1876b1(0x2b3)]; continue; case '13': _0x2becfb[_0x1876b1(0x1d1)][_0x1876b1(0x1ee)] = _0x40266d[_0x1876b1(0x2b3)]; continue; case '14': _0x281887[_0x1876b1(0x230)] = _0x40266d[_0x1876b1(0x258)]; continue; case '15': _0xa91db6[_0x1876b1(0x1d1)][_0x1876b1(0x1ee)] = _0x40266d[_0x1876b1(0x254)]; continue; }break; } } function _0x26e702(_0x41ea20) { const _0x1133d1 = _0x59e224, _0x18cd1e = _0x40266d[_0x1133d1(0x23c)][_0x1133d1(0x2aa)]('|'); let _0x3d8d69 = 0x1865 + 0x263 * -0x1 + -0x272 * 0x9; while (!![]) { switch (_0x18cd1e[_0x3d8d69++]) { case '0': _0x2becfb[_0x1133d1(0x1d1)][_0x1133d1(0x1ee)] = _0x40266d[_0x1133d1(0x254)]; continue; case '1': _0x2becfb[_0x1133d1(0x261)] = _0x40266d[_0x1133d1(0x1ae)]; continue; case '2': _0xa91db6[_0x1133d1(0x1d1)][_0x1133d1(0x1ee)] = _0x40266d[_0x1133d1(0x2b3)]; continue; case '3': _0x329e86[_0x1133d1(0x1d1)][_0x1133d1(0x1ee)] = _0x40266d[_0x1133d1(0x2b3)]; continue; case '4': _0x273bd0[_0x1133d1(0x20c) + 't'] = _0x41ea20; continue; case '5': _0x273bd0[_0x1133d1(0x1d1)][_0x1133d1(0x1ee)] = _0x40266d[_0x1133d1(0x254)]; continue; case '6': _0x273bd0[_0x1133d1(0x179) + _0x1133d1(0x1e3)]({ 'behavior': _0x40266d[_0x1133d1(0x27c)] }); continue; case '7': _0x3f1f6e[_0x1133d1(0x1d1)][_0x1133d1(0x1ee)] = _0x40266d[_0x1133d1(0x2b3)]; continue; case '8': _0x5991fa[_0x1133d1(0x1d1)][_0x1133d1(0x1ee)] = _0x40266d[_0x1133d1(0x2b3)]; continue; case '9': _0x3b3b2f[_0x1133d1(0x1ef)] = ![]; continue; case '10': _0x5b5ea5[_0x1133d1(0x1d1)][_0x1133d1(0x1ee)] = _0x40266d[_0x1133d1(0x2b3)]; continue; }break; } } async function _0x1cf365(_0x28924c, _0x49820c) { const _0x327e84 = _0x59e224; try { const _0x3a00e5 = _0xdbb88e[_0x327e84(0x218)][0x24da + -0x145 * 0x1 + 0x2395 * -0x1], _0x551c00 = _0x27743d[_0x327e84(0x183)], _0x4d9d75 = _0x327e84(0x2bc) + _0x327e84(0x223) + Date[_0x327e84(0x246)]() + '_' + _0x3a00e5[_0x327e84(0x1ed)], _0x3a0ae3 = storage[_0x327e84(0x1d0)](_0x4d9d75); await _0x3a0ae3[_0x327e84(0x28a)](_0x3a00e5); const _0x12afcf = await _0x3a0ae3[_0x327e84(0x1d3) + _0x327e84(0x290)](), _0x107681 = await _0x40266d[_0x327e84(0x238)](fetch, _0x49820c), _0x417286 = await _0x107681[_0x327e84(0x29a)](), _0xbeb143 = _0x327e84(0x1af) + _0x327e84(0x1b5) + Date[_0x327e84(0x246)]() + _0x327e84(0x1f2), _0x1662b6 = storage[_0x327e84(0x1d0)](_0xbeb143); await _0x1662b6[_0x327e84(0x28a)](_0x417286); const _0x2504b8 = await _0x1662b6[_0x327e84(0x1d3) + _0x327e84(0x290)](), _0x2afcbe = { 'originalImageUrl': _0x12afcf, 'aiImageUrl': _0x2504b8, 'createAt': _0x40266d[_0x327e84(0x1a0)](_0xc1ccc5), 'status': _0x40266d[_0x327e84(0x2c1)] }, _0x357c93 = await _0x40266d[_0x327e84(0x2ad)](fetch, _0x22ff11, { 'method': _0x40266d[_0x327e84(0x250)], 'headers': { 'accept': _0x40266d[_0x327e84(0x219)], 'Content-Type': _0x40266d[_0x327e84(0x2c6)] }, 'body': JSON[_0x327e84(0x1dd)](_0x2afcbe) }); if (!_0x357c93['ok']) throw new Error(_0x327e84(0x293) + _0x327e84(0x187) + _0x357c93[_0x327e84(0x2d4)]); const _0x1785f0 = await _0x357c93[_0x327e84(0x1a2)](); console[_0x327e84(0x209)](_0x40266d[_0x327e84(0x26c)], _0x1785f0); } catch (_0xcb607e) { console[_0x327e84(0x255)](_0x40266d[_0x327e84(0x193)], _0xcb607e); } } });
     </script>
 </body>
 
